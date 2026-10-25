@@ -290,5 +290,7 @@ Designed and developed by **Shohrab Haque Shahil**
 
 [LinkedIn](https://www.linkedin.com/in/shohrab-haque) | [Website](https://shahil-personal.vercel.app)
 
+## License
+
 Code: MIT ([LICENSE](LICENSE)). Data: Chen, D. (2019). Online Retail II [Dataset]. UCI Machine Learning Repository.
 https://doi.org/10.24432/C5CG6D (CC BY 4.0).
