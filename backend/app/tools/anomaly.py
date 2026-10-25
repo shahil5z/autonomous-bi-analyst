@@ -88,7 +88,7 @@ def detect_largest_anomaly() -> ToolResult:
         "expected": round(float(row["expected"]), 2), "deviation": round(total_dev, 2),
         "robust_z": round(float(row["robust_z"]), 2), "direction": "above" if total_dev > 0 else "below",
         "iqr_flag": bool(row["iqr_flag"]), "anomalies_found": int(len(flagged)), "threshold": THRESHOLD,
-        "window_trading_days": WINDOW, "by_region": records(reg), "top_products": records(prod),
+        "cancellation_window_days": 30, "window_trading_days": WINDOW, "by_region": records(reg), "top_products": records(prod),
         "top_orders": records(cust), "largest_order_share_pct": round(top_order_share, 2) if top_order_share else None,
         "series": records(series.tail(120)),
         "top_product_cancelled_units": int(canc["quantity"].sum()) if len(canc) else 0,

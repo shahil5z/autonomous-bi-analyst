@@ -152,4 +152,6 @@ def query_tool(spec: QuerySpec) -> ToolResult:
         return ToolResult(tool="sql_query", ok=False, no_answer=True, sql=[rec],
                           error="The query returned no rows for the requested filters/period.")
     return ToolResult(tool="sql_query", ok=True, rows=records(df), sql=[rec], method="sql_aggregation",
-                      data={"metric": spec.metric, "group_by": spec.group_by})
+                      data={"metric": spec.metric, "group_by": spec.group_by},
+                      limitations=["Cancelled invoices, returns and non-product lines (postage, fees) are excluded from sales.",
+                                   "Revenue is quantity x unit price in GBP before any discounts; the source has no cost or margin data."])

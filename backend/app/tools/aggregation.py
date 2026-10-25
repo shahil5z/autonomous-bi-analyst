@@ -89,7 +89,9 @@ def top_n(metric: str, dimension: str, period: Period | None, n: int, filters: l
     total = float(tot["total"].iloc[0] or 0)
     df["share_pct"] = df[metric] / total * 100 if total else None
     return ToolResult(tool="aggregation", ok=True, rows=records(df), sql=[rec, trec], method="top_n_ranking",
-                      data={"total": round(total, 2), "metric": metric, "dimension": dimension})
+                      data={"total": round(total, 2), "metric": metric, "dimension": dimension},
+                      limitations=["Products are identified by stock code; the most frequent description is shown as the name.",
+                                   "Cancelled invoices and returns are excluded, so a product with many returns may look stronger than it is."])
 
 
 def growth(metric: str, dimension: str, current: Period, previous: Period, filters: list[Filter]) -> ToolResult:

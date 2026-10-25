@@ -57,7 +57,7 @@ def evidence_numbers(ev: Evidence) -> tuple[list[float], list[str]]:
     for s in data_strings:  # dates and ISO-like labels produced by tools are trusted formats
         if re.fullmatch(r"\d{4}(-\d{2}){0,2}|\d{4}-Q[1-4]", s):
             nums.extend(_numbers_in(s))
-    for s in [*ev.periods.values(), *ev.limitations, ev.question]:
+    for s in [*ev.periods.values(), *ev.limitations, ev.question, ev.no_answer_reason or ""]:
         nums.extend(_numbers_in(s))
     expanded = set()
     for v in nums:
