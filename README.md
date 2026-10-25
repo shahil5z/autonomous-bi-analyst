@@ -286,9 +286,9 @@ The OpenAI key is never given a `NEXT_PUBLIC_` name.
 
 ## Author
 
-**Shahil**, built as an AI + Data Science portfolio project.
+Designed and developed by **Shohrab Haque Shahil**
 
-- GitHub: [github.com/shahil5z](https://github.com/shahil5z)
+[LinkedIn](https://www.linkedin.com/in/shohrab-haque) | [Website](https://shahil-personal.vercel.app)
 
 Code: MIT ([LICENSE](LICENSE)). Data: Chen, D. (2019). Online Retail II [Dataset]. UCI Machine Learning Repository.
 https://doi.org/10.24432/C5CG6D (CC BY 4.0).
