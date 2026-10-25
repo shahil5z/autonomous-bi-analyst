@@ -112,7 +112,11 @@ export default function Methodology() {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="border-b border-gray-200 bg-white px-4 py-2.5 flex items-center justify-between">
-        <h1 className="text-sm font-semibold">ABI Analyst · Methodology</h1>
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/abi-icon-128.webp" alt="" width={32} height={32} className="h-8 w-8 rounded-md shrink-0" />
+          <h1 className="text-sm font-semibold">ABI Analyst · Methodology</h1>
+        </div>
         <Link href="/" className="text-xs text-teal-800 hover:underline">← Back to the analyst</Link>
       </header>
       <div className="flex-1 max-w-3xl mx-auto px-4 py-8">

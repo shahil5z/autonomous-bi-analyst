@@ -1,8 +1,10 @@
+<p align="center"><img src="docs/logo/abi-logo.png" alt="ABI Analyst logo" width="220"></p>
+
 # ABI Analyst: an Autonomous Business Intelligence Analyst
 
 Evidence-backed AI business intelligence analyst using SQL, statistics, machine learning, and OpenAI.
 
-**Live demo:** LIVE_URLS_PENDING
+**Live demo:** https://autonomous-bi-analyst.vercel.app · API: https://abi-api.vercel.app/health
 
 ![Workspace with a growth question answered](docs/screenshots/02-desktop-growth.png)
 

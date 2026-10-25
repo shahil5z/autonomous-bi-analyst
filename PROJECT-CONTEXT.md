@@ -3,7 +3,7 @@
 **What**: ABI Analyst, a natural-language BI analyst over UCI Online Retail II. Student Data Science portfolio project
 (Project 2; Project 1 is market-intelligence-lab).
 **Status**: Phase 2: audited, fixed, tested locally, pushed to GitHub (shahil5z/autonomous-bi-analyst), deployment to
-Vercel in progress (see the Deployment section of README for live URLs once verified).
+Vercel: https://autonomous-bi-analyst.vercel.app (frontend), https://abi-api.vercel.app (API). Logo: docs/logo, frontend/public, app/icon.png + favicon.ico.
 
 ## Key decisions
 - LLM never computes numbers; SQL/Python tools do. OpenAI is optional (parse fallback + explanation wording) and every

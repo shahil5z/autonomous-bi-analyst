@@ -146,6 +146,8 @@ export default function Home() {
       <header className="flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-2.5">
         <div className="flex items-center gap-3">
           <button className="lg:hidden text-sm border border-gray-300 rounded px-2 py-1" onClick={() => setMenuOpen(true)} aria-label="Open menu">Menu</button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/abi-icon-128.webp" alt="" width={32} height={32} className="h-8 w-8 rounded-md shrink-0" />
           <div>
             <h1 className="text-sm font-semibold text-gray-900">ABI Analyst</h1>
             <p className="text-[11px] text-gray-500 hidden sm:block">Ask questions about two years of online-retail sales (Dec 2009 – Dec 2011)</p>
