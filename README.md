@@ -7,48 +7,36 @@
 ### Ask questions about your business data. Get evidence-backed answers.
 
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)
-![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?logo=openai&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![DuckDB](https://img.shields.io/badge/DuckDB-FFF000?logo=duckdb&logoColor=black)
+![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?logo=openai&logoColor=white)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?logo=scikitlearn&logoColor=white)
-![License: MIT](https://img.shields.io/badge/License-MIT-green)
+
+**Live Demo:** [https://autonomous-bi-analyst.vercel.app/](https://autonomous-bi-analyst.vercel.app/)
 
 </div>
 
-## Live Demo
-
-**https://autonomous-bi-analyst.vercel.app**
-
-Type a question such as "Which region grew fastest?" or pick one of the suggested questions. No sign-up is needed.
-
-## What it does
+## Overview
 
 ABI Analyst is an analytical workspace for two years of online-retail sales. You ask a business question in plain
-English. The backend turns it into a validated analysis plan, runs SQL and Python tools on a read-only DuckDB
-database, checks the results, and returns:
-
-- a short answer and the evidence behind it,
-- a chart built from the result rows,
-- the exact SQL that ran, the data, the method and the limitations,
-- a high-level trace of the steps taken.
+English and get a short answer, the evidence behind it, a chart, the exact SQL that ran, and the method and
+limitations. No sign-up is needed.
 
 The language model never computes a number. SQL, statistics and ML code compute everything; OpenAI only parses
 unclear questions and words the explanation, and every number it writes is checked against the evidence.
 
-## Why I built it
+## Why I Built It
 
 Most "chat with your data" demos let a model write SQL and describe the result, and it is hard to tell when the
-numbers are wrong. I wanted to build the opposite: an analyst where every number comes from code I can test, the
-statistics report their assumptions, and the model only writes sentences around evidence that has already been
-checked.
+numbers are wrong. I wanted the opposite: every number comes from code I can test, the statistics report their
+assumptions, and the model only writes sentences around evidence that has already been checked.
 
 My first project, [Market Intelligence Lab](https://github.com/shahil5z/market-intelligence-lab), covers classical
-data science (modelling and evaluation in notebooks and a dashboard). This one is about agentic analytics: tools,
-planning, validation and grounded AI explanations.
+data science. This one is about agentic analytics: tools, planning, validation and grounded AI explanations.
 
-## Core workflow
+## How It Works
 
 ```
 USER QUESTION
@@ -72,102 +60,107 @@ GROUNDED EXPLANATION   numbers, names and causal wording checked; else template
 USER
 ```
 
-## Key capabilities
+## Architecture
 
-- Revenue rankings, totals and top-N products with shares.
-- Period-over-period growth, change decomposition and growth drivers.
-- Monthly trends and 7 to 90 day revenue forecasts with a rough uncertainty band.
-- Anomaly detection with a drill-down by region, product and order.
-- RFM customer segmentation with K-Means.
+- **Frontend:** a Next.js app (workspace and methodology pages) deployed on Vercel. It calls the backend's
+  `POST /api/analyze` and renders the answer, chart, SQL, data, method and trace.
+- **Backend:** FastAPI deployed as a Vercel Python function. The agent modules (`app/agent`) plan and route; the
+  tools (`app/tools`) do the analysis.
+- **Data:** a compressed DuckDB file (`backend/artifacts/abi.duckdb.gz`, about 6 MB) ships with the function, is
+  unpacked to `/tmp` on a cold start and opened read-only.
+- **Runs:** run records go to SQLite in `/tmp`; the browser keeps recent and saved analyses in localStorage.
+- **OpenAI:** called from the backend only, with the key kept server-side.
+
+## Key Capabilities
+
+- Revenue rankings, totals, top-N products, period-over-period growth and growth drivers.
+- Monthly trends and 7 to 90 day forecasts with a rough uncertainty band.
+- Anomaly detection with a drill-down, and RFM customer segments.
 - Two-group significance tests, chi-square association and price-quantity correlation.
-- Synthetic campaign comparisons, worded as association only.
-- Follow-up questions in the same session ("What products drove that growth?", "What about Germany?").
-- A no-answer mode for questions the data cannot answer (weather, personal data, unknown columns, 2-year forecasts)
-  and a refusal for instructions to change data or ignore rules.
-- A methodology page that explains each method.
+- Follow-up questions ("What products drove that growth?", "What about Germany?").
+- A no-answer mode for questions the data cannot answer, and a refusal for instructions to change data or ignore
+  rules.
 
 ## Tech Stack
 
-- **Frontend:** Next.js 16, React 19, TypeScript, Tailwind CSS 4, Recharts
-- **Backend:** Python 3.13, FastAPI, Pydantic 2, SQLite (run records)
-- **Data & Analytics:** DuckDB (read-only), pandas, NumPy, SciPy, scikit-learn
-- **AI:** OpenAI Python SDK, `gpt-4o-mini` with structured outputs
-- **Security & Validation:** sqlglot (SQL parsing and allowlists), Pydantic schemas, a custom grounding check,
-  per-IP rate limits
-- **Testing:** pytest, Ruff, ESLint, TypeScript compiler (`tsc --noEmit`), a 20-question evaluation script
-- **Deployment:** Vercel (frontend and backend as two projects)
+### Frontend
+- Next.js 16, React 19, TypeScript
+- Tailwind CSS 4
+- Recharts
 
-## Data
+### Backend
+- Python 3.13, FastAPI, Pydantic 2
+- SQLite (run records)
 
-[UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii) (Chen, 2019), licence CC BY 4.0:
-1,067,371 invoice lines from a UK online gift retailer, 2009-12-01 to 2011-12-09. After cleaning, 1,003,214 sales
-lines remain.
+### Data & Analytics
+- DuckDB (read-only)
+- pandas, NumPy, SciPy
+- scikit-learn (K-Means, ridge regression)
+
+### AI
+- OpenAI API (`gpt-4o-mini`) with Structured Outputs (Pydantic schemas)
+- A code-defined analytical workflow: planner, tool router and evidence object (the model does not call tools)
+
+### Security & Validation
+- sqlglot for SQL parsing, allowlists and read-only `SELECT` checks
+- Evidence validation and a grounding check on every AI draft
+- Prompt-injection screening and per-IP rate limits
+
+### Testing & Quality
+- pytest (86 tests, including SQL safety, grounding and prompt-injection tests)
+- Ruff, ESLint, TypeScript compiler (`tsc --noEmit`)
+- A 20-question evaluation script (`scripts/run_eval.py`)
+
+## Dataset
+
+[UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii) (Chen, 2019), CC BY 4.0: 1,067,371
+invoice lines from a UK online gift retailer, 2009-12-01 to 2011-12-09; 1,003,214 sales lines after cleaning.
 
 - Regions and product categories are derived by rules.
 - Campaigns are **synthetic** (seed 42, no effect injected), so campaign answers only demonstrate the method.
-- The raw file is not committed. `scripts/run_pipeline.py` downloads it and builds the database. A 2,000-row raw
-  sample is in `data/sample/`.
-- Lineage: raw XLSX → `scripts/ingest.py` (cleaning, cancellations split out) → `scripts/build_db.py` (DuckDB star
-  schema: `sales`, `products`, `customers`, `regions`, `calendar`, `campaigns`, `cancellations`) →
-  `backend/artifacts/abi.duckdb.gz` (about 6 MB, committed so the deployed backend has the same data).
-- Data dictionary: [data/README.md](data/README.md).
+- The raw file is not committed; `scripts/run_pipeline.py` downloads it and builds the DuckDB star schema. A
+  2,000-row sample is in `data/sample/`. Data dictionary: [data/README.md](data/README.md).
 
-## Analytical methods
+## Analytical Methods
 
-- **Growth:** period-over-period change with a small-base flag (groups under 1% of the comparison total are not
-  ranked) and a change decomposition.
-- **Significance tests:** Shapiro-Wilk and Levene are checked first, then Student t, Welch t or Mann-Whitney U is
-  chosen. Answers report n per group, the statistic, the p-value, a 95% CI for the difference and Cohen's d.
-  Example: Germany vs France mean order value £509.02 vs £520.22, Welch p = 0.771, not significant.
-- **Association and correlation:** chi-square with Cramér's V; Pearson on log-log values with a Fisher CI, plus
-  Spearman.
-- **Forecasting:** daily revenue, the last *h* days held out (time split). Seasonal naive (same weekday last week),
-  4-week weekday mean and ridge regression (trend + weekday + annual Fourier terms) are compared on MAE, RMSE and
-  MAPE (trading days only). If nothing beats the baseline, the baseline is used and the app says so. On the 30-day
-  holdout (2011-11-09 to 2011-12-08): seasonal naive MAE £12,677.83, RMSE £16,126.55, MAPE 29.4%; weekday mean MAE
-  £13,339.83; ridge MAE £16,022.30. The 80% band comes from the 10th/90th percentiles of holdout errors and is a
-  rough guide, not a calibrated interval.
-- **Segmentation:** RFM per customer → log1p + standardisation → K-Means for k = 2 to 6, k chosen by silhouette.
-  Result: k = 2, silhouette 0.418, 5,852 customers; the top segment holds 45.9% of customers and 90.5% of revenue.
-- **Anomalies:** daily revenue vs the median of the previous 28 trading days, robust z-score (median / MAD) above
-  3.5, with an IQR cross-check. Largest: 2011-12-09, £198,094.64.
+- **Growth:** period-over-period change; groups under 1% of the comparison total are flagged as small base and not
+  ranked.
+- **Significance tests:** Shapiro-Wilk and Levene decide between Student t, Welch t and Mann-Whitney U. Answers
+  report n, the statistic, p-value, a 95% CI and Cohen's d. Example: Germany vs France mean order value £509.02 vs
+  £520.22, Welch p = 0.771, not significant.
+- **Association:** chi-square with Cramér's V; Pearson (log-log, Fisher CI) and Spearman correlation.
+- **Forecasting:** seasonal naive, 4-week weekday mean and ridge regression compared on a time-split holdout (MAE,
+  RMSE, MAPE). On the 30-day holdout nothing beat the seasonal naive baseline (MAE £12,677.83, MAPE 29.4%), so it is
+  used and the app says so. The 80% band comes from holdout errors and is a rough guide.
+- **Segmentation:** RFM → log1p + scaling → K-Means, k chosen by silhouette (k = 2, silhouette 0.418, 5,852
+  customers; the top segment holds 45.9% of customers and 90.5% of revenue).
+- **Anomalies:** robust z-score (median / MAD) against the previous 28 trading days, with an IQR cross-check.
+  Largest: 2011-12-09, £198,094.64.
 
-## AI / Agent workflow
+## AI / Agent Workflow
 
 The tools compute the numbers; the LLM only explains validated evidence.
 
-- **Parsing:** a deterministic parser handles known question shapes. OpenAI structured output (a fixed Pydantic
-  schema) is used only when the parser is not confident, and the result is checked against known intents, metrics
-  and entity names.
-- **Evidence object:** the explanation model receives headline numbers, a few supporting rows, periods and
-  limitations, not raw tables.
-- **SQL visibility:** every answer has a "View SQL" tab with the exact queries that ran, plus "View Data" and
-  "View Method" tabs and a data lineage line.
-- **Validation:** results must be non-empty and finite, group totals must match an independent total, and periods
-  must be inside the data range.
-- **Grounding:** a draft is accepted only if every number matches the evidence (with rounding tolerance), product
-  names are copied exactly and there is no causal wording. Otherwise a deterministic template is used and the
-  answer says so.
-- **Fallback:** without a key, with an invalid key, or on an OpenAI error or timeout, the app still answers with
-  the template explanation, labelled in the UI.
-- At most two OpenAI calls per question (temperature 0, token caps, 12 s timeout, one retry). The trace shows
-  high-level steps only, not model reasoning.
+- **Parsing:** a deterministic parser handles known question shapes; OpenAI structured output is used only when it
+  is unsure, and the result is checked against known intents, metrics and names.
+- **Evidence object:** the model gets headline numbers, a few rows, periods and limitations, not raw tables.
+- **SQL visibility:** every answer has "View SQL", "View Data" and "View Method" tabs and a data lineage line.
+- **Grounding:** a draft is accepted only if every number matches the evidence, product names are exact and there
+  is no causal wording. Otherwise a deterministic template is used and the answer says so.
+- **Fallback:** with no key, an invalid key, or an OpenAI error or timeout, the app still answers with the labelled
+  template.
+- At most two OpenAI calls per question (temperature 0, token caps, 12 s timeout). The trace shows high-level steps
+  only.
 
-## Security & SQL safety
+## Security
 
-- **SQL:** the LLM never writes SQL. Queries are built from a typed spec and pass one `validate_sql` gate: a single
-  statement parsed with sqlglot, `SELECT` only, a keyword blocklist, table and column allowlists, no
-  schema-qualified names or table functions, a function blocklist and a LIMIT capped at 500 rows.
-- **Database:** DuckDB is opened read-only with external access disabled and a locked configuration. Queries are
-  interrupted after 10 s.
-- **Prompt injection:** questions asking to ignore instructions or change data are refused. Database text (product,
-  country, region and campaign names) is passed to the model as data with a rule to ignore instructions in it, and
-  numbers that appear only inside data strings do not count as evidence. Tests plant an injection in DB fields and
-  check that the answer is unchanged.
-- **Abuse limits:** per-IP limits on `POST /api/analyze` (10 per minute, 150 per day), 500-character questions,
-  4 KB request bodies and OpenAI token caps.
-- **Secrets:** the OpenAI key stays on the backend, is never sent to the browser and is never logged. CORS allows
-  only the frontend origin.
+- **SQL:** the LLM never writes SQL. Queries are built from a typed spec and pass one `validate_sql` gate (single
+  `SELECT`, keyword and function blocklists, table and column allowlists, LIMIT capped at 500).
+- **Database:** DuckDB read-only with external access disabled; queries time out after 10 s.
+- **Prompt injection:** instructions to ignore rules or change data are refused; database text is passed to the
+  model as data, and tests plant injections in DB fields to check the answer is unchanged.
+- **Abuse limits:** 10 requests per minute and 150 per day per IP, 500-character questions, 4 KB bodies.
+- **Secrets:** the OpenAI key stays on the backend and is never logged; CORS allows only the frontend origin.
 
 ## Evaluation
 
@@ -194,7 +187,7 @@ the template answer was used instead. This varies between runs.
 This is a small set that I wrote alongside the system, so it is a regression check, not an independent benchmark.
 Full report: [docs/evaluation_report.md](docs/evaluation_report.md).
 
-## Example questions
+## Example Questions
 
 - Which region has the highest revenue?
 - Which region grew fastest? → What products drove that growth? → What about Germany?
@@ -208,23 +201,16 @@ Full report: [docs/evaluation_report.md](docs/evaluation_report.md).
 
 ## Screenshots
 
-**Workspace:** suggested questions, history on the left, analysis trace on the right.
-
-![Empty workspace](docs/screenshots/workspace.png)
-
-**Evidence-backed answer:** the answer, the evidence it is based on, a chart and the trace.
+![Empty workspace with suggested questions](docs/screenshots/workspace.png)
+*Workspace: suggested questions, history on the left, analysis trace on the right.*
 
 ![Answer to "Which region grew fastest?"](docs/screenshots/evidence-answer.png)
-
-**SQL and lineage:** the exact query that ran, the data lineage and follow-up questions.
+*Evidence-backed answer: the answer, the evidence it is based on, a chart and the trace.*
 
 ![View SQL tab with data lineage](docs/screenshots/sql-and-trace.png)
+*SQL view: the exact query that ran, the data lineage and follow-up questions.*
 
-**Forecast chart:** recent daily revenue, the 30-day forecast and holdout metrics for three models.
-
-![30-day revenue forecast](docs/screenshots/forecast-chart.png)
-
-## Project structure
+## Project Structure
 
 ```
 backend/    FastAPI app
@@ -240,7 +226,7 @@ data/       README.md, sample/
 docs/       evaluation_report.md, logo/, screenshots/
 ```
 
-## Local setup
+## Local Setup
 
 Tested on Linux with Python 3.13 and Node 20.
 
@@ -267,7 +253,7 @@ cd frontend && npm run lint && npx tsc --noEmit && npm run build
 python scripts/run_eval.py --modes template,openai
 ```
 
-## Environment variables
+## Environment Variables
 
 See [.env.example](.env.example).
 
@@ -291,7 +277,7 @@ The OpenAI key is never given a `NEXT_PUBLIC_` name.
 - The rule-based parser covers a fixed set of question shapes; other phrasing depends on the optional LLM parser.
 - The grounding check verifies numbers, names and causal words, not whether every sentence is well phrased.
 
-## Future improvements
+## Future Improvements
 
 - A larger, independently written evaluation set and a semantic check of the AI wording.
 - A shared rate limiter and a hosted database for runs and sessions.
