@@ -21,8 +21,10 @@ def build_chart(evidence: Evidence, data: dict) -> ChartSpec | None:
         if t == "growth_ranking":
             dim = evidence.headline["dimension"]
             key = "product" if dim == "product" else dim
-            pts = [{key: r[key], "growth_pct": r["growth_pct"]} for r in rows if r.get("growth_pct") is not None]
-            return ChartSpec(type="bar", title=f"Growth by {dim} (%)", x=key, y=["growth_pct"], data=pts[:15], y_label="%")
+            pts = [{key: r[key], "growth_pct": r["growth_pct"]} for r in rows if r.get("growth_pct") is not None and not r.get("small_base")]
+            omitted = sum(1 for r in rows if r.get("small_base"))
+            return ChartSpec(type="bar", title=f"Growth by {dim} (%)", x=key, y=["growth_pct"], data=pts[:15], y_label="%",
+                             note=f"{omitted} small-base group(s) omitted from the chart (see View Data)." if omitted else None)
         if t in ("period_change", "drivers"):
             pts = [{"name": r["name"], "change": r["change"]} for r in rows if r["dimension"] in ("region", "product", "category")]
             dim_rows = [r for r in rows if r["dimension"] == ("category" if t == "drivers" else "region")]

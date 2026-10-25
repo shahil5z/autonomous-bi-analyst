@@ -64,7 +64,6 @@ def clean(raw: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     stats["after_removing_non_product_codes"] = len(df)
     df["product_id"] = df["product_id"].astype(str).str.upper()
     df["customer_id"] = df["customer_id"].astype("Int64")
-    df["country"] = df["country"].replace({"EIRE": "EIRE"})
     df["region"] = df["country"].map(COUNTRY_TO_REGION).fillna("Rest of World")
     df["invoice_date"] = df["invoice_ts"].dt.normalize()
     df["revenue"] = (df["quantity"] * df["unit_price"]).round(2)

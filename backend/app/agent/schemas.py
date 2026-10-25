@@ -175,6 +175,7 @@ class GroundingReport(BaseModel):
     passed: bool
     unmatched_numbers: list[str] = Field(default_factory=list)
     causal_language: list[str] = Field(default_factory=list)
+    unknown_names: list[str] = Field(default_factory=list)
 
 
 class TraceStep(BaseModel):

@@ -92,12 +92,15 @@ def analyze(req: AnalyzeRequest, save: bool = True) -> AnalyzeResponse:
         llm, err = openai_service.explain(ev)
         if llm is not None:
             g = check_grounding(llm, ev)
-            if g.passed:
+            if g.passed and len(llm.answer.split()) < 6:
+                note = "OpenAI explanation rejected (answer too short to be useful); template used."
+            elif g.passed:
                 explanation, source, grounding = llm, "openai", g
             else:
                 note = "OpenAI explanation rejected by grounding check (" + ", ".join(
                     (g.unmatched_numbers and [f"unsupported numbers: {', '.join(g.unmatched_numbers[:4])}"] or [])
-                    + (g.causal_language and ["causal wording"] or [])) + "); template used."
+                    + (g.causal_language and ["causal wording"] or [])
+                    + (g.unknown_names and [f"names not in evidence: {', '.join(g.unknown_names[:3])}"] or [])) + "); template used."
         else:
             note = f"{err}; template used."
     trace.append(TraceStep(label="Generated explanation", status="done",

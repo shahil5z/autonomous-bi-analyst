@@ -40,3 +40,17 @@ def test_every_template_number_is_grounded(fixture_db):
         r = ask(q, sid=q[:10].replace(" ", "_"))
         assert r.evidence.status == "answered", (q, r.evidence.no_answer_reason)
         assert r.grounding.passed, (q, r.grounding)
+
+
+def test_misspelled_product_name_fails_grounding():
+    from app.agent.grounding import check_grounding
+    from app.agent.pipeline import analyze
+    from app.agent.schemas import AnalyzeRequest, Explanation
+
+    r = analyze(AnalyzeRequest(question="What are the top 5 products by revenue?"), save=False)
+    real = r.evidence.headline["top_product"]
+    ok = Explanation(answer=f"The top product is {real}.", evidence_bullets=[], analysis="", limitations=[], follow_ups=[])
+    assert check_grounding(ok, r.evidence).passed
+    bad = Explanation(answer="The top product is REGISTRY CAKESTAND.", evidence_bullets=[], analysis="", limitations=[], follow_ups=[])
+    g = check_grounding(bad, r.evidence)
+    assert not g.passed and g.unknown_names == ["REGISTRY CAKESTAND"]

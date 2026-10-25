@@ -88,6 +88,28 @@ def number_supported(value: float, decimals: int, scale: float, allowed: list[fl
     return False
 
 
+CAPS_PHRASE = re.compile(r"\b[A-Z][A-Z'&./-]+(?:\s+[A-Z][A-Z'&./-]+)+\b")
+
+
+def unknown_caps_names(texts: list[str], ev: Evidence) -> list[str]:
+    """Upper-case multi-word phrases (product names in this dataset) must appear verbatim in the evidence.
+
+    Catches a model misspelling or inventing a product, e.g. 'REGISTRY CAKESTAND' for 'REGENCY CAKESTAND 3 TIER'.
+    """
+    nums: list[float] = []
+    strings: list[str] = []
+    _walk(json.loads(ev.model_dump_json(include={"headline", "supporting_data", "stats"})), nums, strings)
+    blob = " | ".join([*strings, ev.question, *ev.limitations]).upper()
+    blob = re.sub(r"\s+", " ", blob)
+    out = []
+    for t in texts:
+        for m in CAPS_PHRASE.finditer(t):
+            phrase = re.sub(r"\s+", " ", m.group())
+            if sum(c.isalpha() for c in phrase) >= 6 and phrase not in blob:
+                out.append(phrase)
+    return out
+
+
 def check_grounding(expl: Explanation, ev: Evidence) -> GroundingReport:
     allowed, data_strings = evidence_numbers(ev)
     text_parts = [expl.answer, expl.analysis, *expl.evidence_bullets, *expl.limitations]
@@ -104,4 +126,6 @@ def check_grounding(expl: Explanation, ev: Evidence) -> GroundingReport:
             for sentence in re.split(r"(?<=[.!?])\s+", part):
                 if CAUSAL.search(sentence) and not NEGATION.search(sentence):
                     causal.append(sentence[:160])
-    return GroundingReport(passed=not unmatched and not causal, unmatched_numbers=unmatched[:10], causal_language=causal[:5])
+    names = unknown_caps_names([expl.answer, expl.analysis, *expl.evidence_bullets], ev)
+    return GroundingReport(passed=not unmatched and not causal and not names, unmatched_numbers=unmatched[:10],
+                           causal_language=causal[:5], unknown_names=names[:5])

@@ -69,7 +69,7 @@ export type AnalyzeResponse = {
   explanation: Explanation;
   explanation_source: "openai" | "template";
   explanation_note: string | null;
-  grounding: { passed: boolean; unmatched_numbers: string[]; causal_language: string[] };
+  grounding: { passed: boolean; unmatched_numbers: string[]; causal_language: string[]; unknown_names?: string[] };
   follow_ups: string[];
   trace: TraceStep[];
   lineage: LineageStep[];
