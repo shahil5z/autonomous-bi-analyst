@@ -119,7 +119,7 @@ export default function Methodology() {
         </div>
         <Link href="/" className="text-xs text-teal-800 hover:underline">← Back to the analyst</Link>
       </header>
-      <div className="flex-1 max-w-3xl mx-auto px-4 py-8">
+      <div className="flex-1 w-full max-w-3xl mx-auto px-4 py-8">
         <nav aria-label="On this page" className="mb-8 text-xs flex flex-wrap gap-x-3 gap-y-1">
           {SECTIONS.map((s) => <a key={s.id} href={`#${s.id}`} className="text-teal-800 hover:underline">{s.title}</a>)}
         </nav>
