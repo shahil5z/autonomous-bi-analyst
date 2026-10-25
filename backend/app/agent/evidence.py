@@ -112,7 +112,8 @@ def headline_for(pq: ParsedQuestion, r: ToolResult) -> dict:
         return h
     if i == "forecast":
         keys = ["horizon_days", "best_model", "best_label", "best_mae", "best_rmse", "baseline_mae", "baseline_rmse",
-                "beats_baseline", "forecast_total", "holdout_start", "holdout_end"]
+                "beats_baseline", "forecast_total", "holdout_start", "holdout_end", "best_mape_pct",
+                "interval_level_pct", "interval_error_low", "interval_error_high"]
         h = {k: d[k] for k in keys}
         h["forecast_start"], h["forecast_end"] = d["forecast"][0]["day"], d["forecast"][-1]["day"]
         return h

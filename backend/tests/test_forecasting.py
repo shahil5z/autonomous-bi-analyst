@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pytest
 from app.tools import forecasting as fc
 
 
@@ -36,3 +37,16 @@ def test_horizon_limits():
 def test_forecast_on_fixture(fixture_db):
     r = fc.forecast_revenue(14)
     assert r.ok and len(r.data["forecast"]) == 14 and r.data["continuity"]["zero_filled_saturdays"] > 0
+
+
+def test_mape_skips_zero_days_and_band_brackets_forecast():
+    mape = fc.mape
+
+    assert mape(np.array([0.0, 100.0]), np.array([5.0, 110.0])) == pytest.approx(10.0)
+    assert mape(np.array([0.0]), np.array([1.0])) is None
+    idx = pd.date_range("2010-01-01", periods=300, freq="D")
+    rng = np.random.default_rng(1)
+    s = pd.Series(100 + 20 * (idx.day_of_week == 1) + rng.normal(0, 5, len(idx)), index=idx)
+    out = fc.evaluate_and_forecast(s, 14)
+    assert out["best_mape_pct"] is not None
+    assert all(r["low_80"] <= r["forecast"] <= r["high_80"] or r["low_80"] == 0 for r in out["forecast"])

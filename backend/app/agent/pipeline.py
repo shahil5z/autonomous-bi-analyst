@@ -9,7 +9,7 @@ from pydantic import ValidationError
 
 from app import config
 from app.agent import followups
-from app.agent.analyzer import deterministic_parse, from_llm
+from app.agent.analyzer import CAUSAL_QUESTION, deterministic_parse, from_llm
 from app.agent.context import store
 from app.agent.evidence import build_evidence, validate_evidence
 from app.agent.grounding import check_grounding
@@ -22,6 +22,8 @@ from app.database.connection import data_range
 from app.services import runs
 from app.tools.visualization import build_chart
 
+OBSERVATIONAL = {"campaign_effect", "compare_groups", "correlation", "association"}
+CAUSAL_NOTE = "I can't say whether this caused a change: the data is observational, so only an association can be reported."
 SOURCE = "UCI Online Retail II (CC BY 4.0)"
 
 
@@ -103,6 +105,10 @@ def analyze(req: AnalyzeRequest, save: bool = True) -> AnalyzeResponse:
                     + (g.unknown_names and [f"names not in evidence: {', '.join(g.unknown_names[:3])}"] or [])) + "); template used."
         else:
             note = f"{err}; template used."
+    if ev.status == "answered" and pq.intent in OBSERVATIONAL and CAUSAL_QUESTION.search(question):
+        note_c = CAUSAL_NOTE + (" The campaigns are also synthetic." if pq.intent == "campaign_effect" else "")
+        explanation.answer = note_c + " " + explanation.answer
+        explanation.limitations = [*explanation.limitations, note_c]
     trace.append(TraceStep(label="Generated explanation", status="done",
                            detail="OpenAI (grounding check passed)" if source == "openai" else "deterministic template"))
 

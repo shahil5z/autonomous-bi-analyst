@@ -34,9 +34,9 @@ def build_chart(evidence: Evidence, data: dict) -> ChartSpec | None:
             return ChartSpec(type="area", title="Monthly trend", x="month", y=["value"], data=rows)
         if t == "forecast":
             hist = [{"day": r["day"], "actual": r["actual"]} for r in data.get("history_tail", [])]
-            fc = [{"day": r["day"], "forecast": r["forecast"]} for r in data.get("forecast", [])]
-            return ChartSpec(type="line", title="Daily revenue: recent history and forecast", x="day", y=["actual", "forecast"],
-                             data=hist + fc, note="Zero values are days with no trading (mostly Saturdays).")
+            fc = [{"day": r["day"], "forecast": r["forecast"], "low_80": r["low_80"], "high_80": r["high_80"]} for r in data.get("forecast", [])]
+            return ChartSpec(type="line", title="Daily revenue: recent history and forecast", x="day", y=["actual", "forecast", "low_80", "high_80"],
+                             data=hist + fc, note="Zero values are days with no trading (mostly Saturdays). low_80 / high_80: rough band from holdout errors.")
         if t == "anomaly" and data.get("series"):
             pts = [{"day": r["day"], "revenue": r["value"], "expected": r["expected"]} for r in data["series"]]
             return ChartSpec(type="line", title="Daily revenue vs rolling expected value", x="day", y=["revenue", "expected"],

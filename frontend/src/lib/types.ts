@@ -86,4 +86,4 @@ export type Health = {
   model: string;
 };
 
-export type SavedAnalysis = { run_id: string; question: string; saved_at: string };
+export type SavedAnalysis = { run_id: string; question: string; saved_at: string; response?: AnalyzeResponse };

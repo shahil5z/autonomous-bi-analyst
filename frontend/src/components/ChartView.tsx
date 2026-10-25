@@ -143,8 +143,8 @@ export default function ChartView({ spec }: { spec: ChartSpec }) {
           <Tooltip formatter={tooltipFmt} />
           {spec.y.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
           {spec.y.map((k, i) => (
-            <Line key={k} dataKey={k} stroke={SERIES[i % SERIES.length]} dot={false} strokeWidth={1.5}
-                  strokeDasharray={k === "expected" || k === "forecast" ? "4 3" : undefined} isAnimationActive={false} connectNulls={false} />
+            <Line key={k} dataKey={k} stroke={k.endsWith("_80") ? "#9ca3af" : SERIES[i % SERIES.length]} dot={false} strokeWidth={1.5}
+                  strokeDasharray={k === "expected" || k === "forecast" ? "4 3" : k.endsWith("_80") ? "2 3" : undefined} isAnimationActive={false} connectNulls={false} />
           ))}
           {flagged && (
             <Line dataKey={(d: Record<string, unknown>) => (d.in_campaign ? d.revenue : null)} name="campaign day" stroke="none"

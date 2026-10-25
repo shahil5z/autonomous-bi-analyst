@@ -6,6 +6,8 @@ from __future__ import annotations
 import os
 
 os.environ["ABI_DISABLE_OPENAI"] = "1"
+os.environ.setdefault("RATE_LIMIT_PER_MIN", "1000")
+os.environ.setdefault("RATE_LIMIT_PER_DAY", "100000")
 
 import duckdb
 import numpy as np

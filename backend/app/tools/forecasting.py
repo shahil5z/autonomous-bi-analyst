@@ -74,26 +74,40 @@ def rmse(y: np.ndarray, p: np.ndarray) -> float:
     return float(np.sqrt(np.mean((y - p) ** 2)))
 
 
+def mape(y: np.ndarray, p: np.ndarray) -> float | None:
+    """MAPE over trading days only (days with zero sales would divide by zero)."""
+    mask = y > 0
+    return float(np.mean(np.abs((y[mask] - p[mask]) / y[mask])) * 100) if mask.any() else None
+
+
 def evaluate_and_forecast(series: pd.Series, horizon: int) -> dict:
     if len(series) < horizon * 4 + 28:
         raise ValueError("History is too short for this horizon.")
     train, test = series.iloc[:-horizon], series.iloc[-horizon:]
-    scores = []
+    scores, preds = [], {}
+    y = test.to_numpy()
     for key, (label, fn) in MODELS.items():
-        pred = fn(train, horizon)
-        scores.append({"model": key, "label": label, "mae": round(mae(test.to_numpy(), pred), 2),
-                       "rmse": round(rmse(test.to_numpy(), pred), 2)})
+        pred = preds[key] = fn(train, horizon)
+        m = mape(y, pred)
+        scores.append({"model": key, "label": label, "mae": round(mae(y, pred), 2),
+                       "rmse": round(rmse(y, pred), 2), "mape_pct": None if m is None else round(m, 1)})
     best = min(scores, key=lambda r: r["mae"])
     baseline = next(s for s in scores if s["model"] == "seasonal_naive_7d")
     future = MODELS[best["model"]][1](series, horizon)
+    # Rough 80% band: 10th/90th percentile of the best model's holdout errors (actual - forecast).
+    resid = y - preds[best["model"]]
+    lo_e, hi_e = float(np.quantile(resid, 0.1)), float(np.quantile(resid, 0.9))
     idx = pd.date_range(series.index[-1] + pd.Timedelta(days=1), periods=horizon, freq="D")
     return {
         "scores": scores, "best_model": best["model"], "best_label": best["label"],
-        "best_mae": best["mae"], "best_rmse": best["rmse"],
+        "best_mae": best["mae"], "best_rmse": best["rmse"], "best_mape_pct": best["mape_pct"],
+        "interval_level_pct": 80, "interval_error_low": round(lo_e, 2), "interval_error_high": round(hi_e, 2),
         "baseline_mae": baseline["mae"], "baseline_rmse": baseline["rmse"],
         "beats_baseline": best["model"] != "seasonal_naive_7d",
         "holdout_start": test.index[0].date().isoformat(), "holdout_end": test.index[-1].date().isoformat(),
-        "forecast": [{"day": d.date().isoformat(), "forecast": round(float(v), 2)} for d, v in zip(idx, future, strict=True)],
+        "forecast": [{"day": d.date().isoformat(), "forecast": round(float(v), 2),
+                      "low_80": round(max(0.0, float(v) + lo_e), 2), "high_80": round(max(0.0, float(v) + hi_e), 2)}
+                     for d, v in zip(idx, future, strict=True)],
         "forecast_total": round(float(np.sum(future)), 2),
         "holdout": [{"day": d.date().isoformat(), "actual": round(float(v), 2)} for d, v in test.items()],
     }
@@ -121,7 +135,8 @@ def forecast_revenue(horizon: int = 30) -> ToolResult:
                       limitations=[
                           f"Days with no sales were filled with 0 ({info['zero_filled_days']} days, mostly Saturdays when the shop did not trade).",
                           "Only about two years of history: annual seasonality is estimated from two seasons.",
-                          "Point forecasts only; no prediction intervals are produced.",
+                          "The 80% band comes from the 10th/90th percentiles of errors on a single holdout window; it is a rough guide, not a calibrated prediction interval.",
+                          "MAPE is computed over trading days only (days with zero sales are skipped).",
                           f"The last data day ({last_day.date().isoformat()}) was excluded as possibly incomplete.",
                           "The holdout covers the late-November peak, so errors are measured on an unusually busy period.",
                       ])

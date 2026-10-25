@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+import time
+from collections import defaultdict, deque
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -17,11 +19,50 @@ from app.database import connection
 from app.database.schema import ALLOWED_SCHEMA, TABLE_DESCRIPTIONS
 from app.services import runs
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s %(message)s")
 log = logging.getLogger("abi")
 
-app = FastAPI(title="ABI Analyst API", version="0.1.0")
-app.add_middleware(CORSMiddleware, allow_origins=config.CORS_ORIGINS, allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
+app = FastAPI(title="ABI Analyst API", version="1.0.0", docs_url=None, redoc_url=None, openapi_url=None)
+app.add_middleware(CORSMiddleware, allow_origins=config.CORS_ORIGINS, allow_methods=["GET", "POST"], allow_headers=["Content-Type"],
+                   max_age=600)
+
+# Per-IP sliding-window limits on /api/analyze. Kept in memory: each serverless instance has its own counters.
+_hits: dict[str, deque[float]] = defaultdict(deque)
+
+
+def _client_ip(request: Request) -> str:
+    fwd = request.headers.get("x-forwarded-for", "")
+    return (fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "unknown"))[:64]
+
+
+def _rate_limited(ip: str) -> str | None:
+    now = time.time()
+    q = _hits[ip]
+    while q and now - q[0] > 86400:
+        q.popleft()
+    if len(q) >= config.RATE_LIMIT_PER_DAY:
+        return "Daily question limit reached for this address. Please try again tomorrow."
+    if sum(1 for t in q if now - t < 60) >= config.RATE_LIMIT_PER_MIN:
+        return "Too many questions in a short time. Please wait a minute and try again."
+    q.append(now)
+    if len(_hits) > 5000:  # bound memory
+        for k in list(_hits)[:1000]:
+            _hits.pop(k, None)
+    return None
+
+
+@app.middleware("http")
+async def _limits(request: Request, call_next) -> Response:
+    if request.method == "POST" and request.url.path == "/api/analyze":
+        if int(request.headers.get("content-length") or 0) > 4096:
+            return _error(413, "payload_too_large", "Request body is too large.")
+        msg = _rate_limited(_client_ip(request))
+        if msg:
+            return JSONResponse(status_code=429, content={"error": {"code": "rate_limited", "message": msg}}, headers={"Retry-After": "60"})
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Cache-Control"] = response.headers.get("Cache-Control", "no-store")
+    return response
 
 
 def _error(status: int, code: str, message: str) -> JSONResponse:
@@ -52,7 +93,8 @@ def health() -> dict:
         db = {"ok": True, "date_range": [lo.isoformat(), hi.isoformat()]}
     except connection.DatabaseError:
         db = {"ok": False}
-    return {"status": "ok", "database": db, "openai_configured": config.openai_enabled(), "model": config.OPENAI_MODEL}
+    return {"status": "ok", "database": db, "openai_configured": config.openai_enabled(), "model": config.OPENAI_MODEL,
+            "run_storage": "temporary (/tmp, per instance)" if config.ON_SERVERLESS else "local SQLite"}
 
 
 @app.post("/api/analyze", response_model=AnalyzeResponse)
@@ -61,11 +103,6 @@ def analyze_endpoint(req: AnalyzeRequest) -> AnalyzeResponse:
         return analyze(req)
     except connection.DatabaseError:
         raise HTTPException(status_code=503, detail="The database is not available.") from None
-
-
-@app.get("/api/runs")
-def list_runs(limit: int = 30) -> dict:
-    return {"runs": runs.list_runs(max(1, min(limit, 100)))}
 
 
 @app.get("/api/runs/{run_id}")

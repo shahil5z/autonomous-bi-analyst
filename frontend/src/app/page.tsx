@@ -5,10 +5,12 @@ import Sidebar from "@/components/Sidebar";
 import ResultCard from "@/components/ResultCard";
 import TracePanel from "@/components/TracePanel";
 import Footer from "@/components/Footer";
-import { analyze, ApiError, getHealth, getRun, getRuns, getSuggestions } from "@/lib/api";
+import { analyze, ApiError, getHealth, getRun, getSuggestions } from "@/lib/api";
 import type { AnalyzeResponse, Health, RunSummary, SavedAnalysis } from "@/lib/types";
 
-const SAVED_KEY = "abi.saved.v1";
+const SAVED_KEY = "abi.saved.v2";
+const RECENT_KEY = "abi.recent.v1";
+const MAX_RECENT = 10;
 const FALLBACK_SUGGESTIONS = [
   "Which region has the highest revenue?",
   "Which region grew fastest?",
@@ -20,13 +22,27 @@ function newSessionId() {
   return Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
 }
 
-function readSaved(): SavedAnalysis[] {
+// Recent and saved analyses live in this browser only. Server-side run storage is temporary on serverless
+// hosting and is shared between visitors, so it is not listed in the UI.
+function readStore<T>(key: string): T[] {
   if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(window.localStorage.getItem(SAVED_KEY) || "[]");
+    return JSON.parse(window.localStorage.getItem(key) || "[]");
   } catch {
     return [];
   }
+}
+
+function writeStore(key: string, items: unknown[]) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(items));
+  } catch {
+    // storage full or blocked: keep the in-memory list only
+  }
+}
+
+function toSummary(r: AnalyzeResponse): RunSummary {
+  return { id: r.run_id, question: r.question, created_at: "", tools_used: r.evidence.tools_used, final_answer: r.explanation.answer };
 }
 
 export default function Home() {
@@ -35,7 +51,7 @@ export default function Home() {
   const [thread, setThread] = useState<AnalyzeResponse[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [recent, setRecent] = useState<RunSummary[]>([]);
+  const [recentRuns, setRecentRuns] = useState<AnalyzeResponse[]>([]);
   const [saved, setSaved] = useState<SavedAnalysis[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>(FALLBACK_SUGGESTIONS);
   const [health, setHealth] = useState<Health | null>(null);
@@ -44,15 +60,21 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
 
-  const refreshRecent = useCallback(() => {
-    getRuns().then((r) => setRecent(r.runs)).catch(() => undefined);
+  const remember = useCallback((res: AnalyzeResponse) => {
+    setRecentRuns((prev) => {
+      const next = [res, ...prev.filter((p) => p.run_id !== res.run_id)].slice(0, MAX_RECENT);
+      writeStore(RECENT_KEY, next);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
     getSuggestions().then((s) => setSuggestions(s.suggestions)).catch(() => undefined);
     getHealth().then(setHealth).catch(() => setHealth(null));
-    getRuns().then((r) => setRecent(r.runs)).catch(() => undefined);
-    const t = window.setTimeout(() => setSaved(readSaved()), 0);
+    const t = window.setTimeout(() => {
+      setSaved(readStore<SavedAnalysis>(SAVED_KEY));
+      setRecentRuns(readStore<AnalyzeResponse>(RECENT_KEY));
+    }, 0);
     return () => window.clearTimeout(t);
   }, []);
 
@@ -71,14 +93,14 @@ export default function Home() {
       const res = await analyze(text, session.current, useOpenai);
       session.current = res.session_id;
       setThread((t) => [...t, res]);
-      refreshRecent();
+      remember(res);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Unexpected error.");
       setQuestion(text);
     } finally {
       setLoading(false);
     }
-  }, [loading, useOpenai, refreshRecent]);
+  }, [loading, useOpenai, remember]);
 
   const newAnalysis = () => {
     session.current = newSessionId();
@@ -91,22 +113,29 @@ export default function Home() {
   const openRun = async (id: string) => {
     setMenuOpen(false);
     setError(null);
+    const local = recentRuns.find((r) => r.run_id === id) || saved.find((s) => s.run_id === id)?.response;
+    if (local) {
+      session.current = local.session_id;
+      setThread([local]);
+      return;
+    }
     try {
       const run = await getRun(id);
       session.current = run.session_id;
       setThread([run]);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Could not open that analysis.");
+      setError(e instanceof ApiError && e.code !== "not_found" ? e.message
+        : "That analysis is no longer stored. Server-side storage is temporary on this deployment; ask the question again.");
     }
   };
 
   const persist = (items: SavedAnalysis[]) => {
     setSaved(items);
-    window.localStorage.setItem(SAVED_KEY, JSON.stringify(items));
+    writeStore(SAVED_KEY, items);
   };
   const save = (r: AnalyzeResponse) => {
     if (saved.some((s) => s.run_id === r.run_id)) return;
-    persist([{ run_id: r.run_id, question: r.question, saved_at: new Date().toISOString() }, ...saved].slice(0, 30));
+    persist([{ run_id: r.run_id, question: r.question, saved_at: new Date().toISOString(), response: r }, ...saved].slice(0, 20));
   };
 
   const latest = thread.length ? thread[thread.length - 1] : null;
@@ -135,7 +164,7 @@ export default function Home() {
       </header>
 
       <div className="flex flex-1 min-h-0 flex-col lg:flex-row">
-        <Sidebar recent={recent} saved={saved} onNew={newAnalysis} onOpen={openRun}
+        <Sidebar recent={recentRuns.map(toSummary)} saved={saved} onNew={newAnalysis} onOpen={openRun}
                  onRemoveSaved={(id) => persist(saved.filter((s) => s.run_id !== id))} open={menuOpen} onClose={() => setMenuOpen(false)} />
 
         <main className="flex-1 min-w-0 px-4 py-6 lg:px-8">

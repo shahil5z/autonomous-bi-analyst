@@ -7,7 +7,14 @@ licence **CC BY 4.0**. A UK-based, non-store online retailer selling mainly gift
 Two sheets, 2009-12-01 to 2011-12-09, 1,067,371 rows in total.
 
 `scripts/run_pipeline.py` downloads the zip from UCI (or uses `ABI_RAW_XLSX`), writes `data/raw/online_retail_ii.parquet`
-and builds `data/processed/abi.duckdb`. Both folders are git-ignored; nothing from the dataset is committed.
+and builds `data/processed/abi.duckdb` plus a gzipped copy at `backend/artifacts/abi.duckdb.gz` (about 6 MB,
+written with a fixed gzip timestamp). `data/raw/` and `data/processed/` are git-ignored; the raw file is not committed.
+
+What is committed from the dataset (allowed by CC BY 4.0 with attribution):
+
+- `backend/artifacts/abi.duckdb.gz`: the cleaned, derived database used by the deployed backend.
+- `data/sample/online_retail_ii_sample.csv`: 2,000 random raw rows (`random_state=42`) so the format can be inspected
+  without downloading the full file.
 
 ## Public vs derived vs synthetic
 

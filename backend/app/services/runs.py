@@ -30,13 +30,6 @@ def save_run(response: dict) -> None:
             response["explanation"]["answer"], json.dumps(response)))
 
 
-def list_runs(limit: int = 30) -> list[dict]:
-    with _lock, _conn() as con:
-        rows = con.execute("SELECT id, question, created_at, tools_used, final_answer FROM analysis_runs "
-                           "ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
-    return [{"id": r[0], "question": r[1], "created_at": r[2], "tools_used": json.loads(r[3]), "final_answer": r[4]} for r in rows]
-
-
 def get_run(run_id: str) -> dict | None:
     with _lock, _conn() as con:
         row = con.execute("SELECT response, created_at FROM analysis_runs WHERE id = ?", (run_id,)).fetchone()

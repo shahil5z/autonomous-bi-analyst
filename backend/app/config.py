@@ -36,11 +36,30 @@ def _load_key_file() -> None:
 
 _load_key_file()
 
+ON_SERVERLESS = bool(os.getenv("VERCEL"))
 DB_PATH = Path(os.getenv("ABI_DB_PATH", ROOT / "data" / "processed" / "abi.duckdb"))
-RUNS_DB_PATH = Path(os.getenv("ABI_RUNS_DB_PATH", ROOT / "data" / "processed" / "analysis_runs.sqlite"))
+# Compressed copy shipped with the API (backend/artifacts/abi.duckdb.gz); unpacked to the temp dir when DB_PATH is missing.
+DB_GZ_PATH = Path(os.getenv("ABI_DB_GZ_PATH", Path(__file__).resolve().parents[1] / "artifacts" / "abi.duckdb.gz"))
+# Run history. On Vercel only /tmp is writable, so stored runs are temporary and per instance.
+RUNS_DB_PATH = Path(os.getenv("ABI_RUNS_DB_PATH", "/tmp/abi_analysis_runs.sqlite" if ON_SERVERLESS
+                              else ROOT / "data" / "processed" / "analysis_runs.sqlite"))
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-OPENAI_TIMEOUT_S = float(os.getenv("OPENAI_TIMEOUT_S", "20"))
-CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
+OPENAI_TIMEOUT_S = float(os.getenv("OPENAI_TIMEOUT_S", "12"))
+
+
+def _origins() -> list[str]:
+    raw = [os.getenv("FRONTEND_URL", ""), *os.getenv("CORS_ORIGINS", "").split(",")]
+    origins = sorted({o.strip().rstrip("/") for o in raw if o.strip()})
+    if "*" in origins:
+        raise RuntimeError("Wildcard CORS origin is not allowed; set FRONTEND_URL / CORS_ORIGINS explicitly.")
+    return origins or ["http://localhost:3000"]
+
+
+CORS_ORIGINS = _origins()
+# Abuse protection (in-memory, so limits apply per server instance).
+RATE_LIMIT_PER_MIN = int(os.getenv("RATE_LIMIT_PER_MIN", "10"))
+RATE_LIMIT_PER_DAY = int(os.getenv("RATE_LIMIT_PER_DAY", "150"))
+MAX_QUESTION_CHARS = 500
 SQL_MAX_ROWS = int(os.getenv("SQL_MAX_ROWS", "500"))
 SQL_TIMEOUT_S = float(os.getenv("SQL_TIMEOUT_S", "10"))
 

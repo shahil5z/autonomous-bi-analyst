@@ -112,9 +112,12 @@ def template_explanation(ev: Evidence, pq: ParsedQuestion) -> Explanation:
     if i == "forecast":
         ans = (f"Forecast total revenue for the next {h['horizon_days']} days ({h['forecast_start']} to {h['forecast_end']}): {money(h['forecast_total'])}, "
                f"using {h['best_label']}.")
-        bullets = [f"{s['label']}: MAE {money(s['mae'])}, RMSE {money(s['rmse'])}" for s in ev.stats.get("scores", [])]
+        bullets = [f"{s['label']}: MAE {money(s['mae'])}, RMSE {money(s['rmse'])}"
+                   + (f", MAPE {s['mape_pct']}%" if s.get("mape_pct") is not None else "") for s in ev.stats.get("scores", [])]
         ana = (f"Models were scored on a holdout of {h['holdout_start']} to {h['holdout_end']}. "
-               + ("The best model beat the seasonal naive baseline." if h["beats_baseline"] else "No model beat the seasonal naive baseline, so the baseline is used."))
+               + ("The best model beat the seasonal naive baseline." if h["beats_baseline"] else "No model beat the seasonal naive baseline, so the baseline is used.")
+               + f" Uncertainty: on the holdout, daily errors (actual minus forecast) ranged from {money(h['interval_error_low'])} to "
+               f"{money(h['interval_error_high'])} (10th to 90th percentile); the table shows the resulting rough 80% band per day.")
         return Explanation(answer=ans, evidence_bullets=bullets, analysis=ana, limitations=lim, follow_ups=[])
     if i in ("campaign_effect", "compare_groups"):
         if i == "campaign_effect":
@@ -128,7 +131,8 @@ def template_explanation(ev: Evidence, pq: ParsedQuestion) -> Explanation:
                    f"({h['primary_test']}, p = {pval(h['primary_p'])}).")
         bullets = [f"n: {num(h['n_a'])} vs {num(h['n_b'])}", f"Medians: {money(h['median_a'])} vs {money(h['median_b'])}",
                    f"Mean difference: {money(h['mean_difference'])} (95% CI {money(h['ci95_low'])} to {money(h['ci95_high'])})",
-                   f"Cohen's d: {num(h['cohens_d'], 3)} ({h['effect_size_label']})", f"Mann-Whitney p = {pval(h['mann_whitney_p'])}; Welch p = {pval(h['welch_p'])}"]
+                   f"Cohen's d: {num(h['cohens_d'], 3)} ({h['effect_size_label']})", f"Mann-Whitney U = {num(ev.stats.get('mann_whitney_u'), 0)}, p = {pval(h['mann_whitney_p'])}; "
+                   f"Welch t = {num(ev.stats.get('welch_t'), 3)}, p = {pval(h['welch_p'])}"]
         ana = f"The effect size is {h['effect_size_label']}. " + " ".join(ev.stats.get("assumptions", []))
         return Explanation(answer=ans, evidence_bullets=bullets, analysis=ana, limitations=lim + [OBSERVATIONAL], follow_ups=[])
     if i == "association":

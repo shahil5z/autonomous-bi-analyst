@@ -1,4 +1,12 @@
 -r requirements.txt
+# local server
+uvicorn==0.54.0
+# data pipeline and evaluation scripts
+pyarrow==26.0.0
+openpyxl==3.1.5
+requests==2.34.2
+PyYAML==6.0.3
+# tests and lint
 pytest==9.1.1
 httpx==0.28.1
 ruff==0.17.2

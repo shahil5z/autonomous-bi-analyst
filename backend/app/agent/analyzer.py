@@ -23,14 +23,19 @@ UNSUPPORTED_TOPICS = [
     (r"\b(employee|staff|salary|salaries|headcount)\b", "There is no employee data in the database."),
     (r"\b(competitor|market share|stock price|share price)\b", "There is no competitor or market data in the database."),
     (r"\b(inventory|stock level|stockout)\b", "There is no inventory data in the database."),
-    (r"\b(email address|phone number|home address|name of (the )?customer)\b", "Personal customer details are not available and would not be shared."),
+    (r"\b(e-?mails?|phone|telephone|addresses|home address|names? of (the )?customers?|customers?'? names?|personal (data|details))\b",
+     "The dataset has no customer names or contact details, and the analyst does not return personal data."),
     (r"\b(marketing spend|ad spend|roi|return on investment|budget)\b", "There is no marketing spend data, so ROI cannot be calculated."),
 ]
 INJECTION = re.compile(
     r"(ignore (all |any )?(previous|prior|above) (instructions|prompts?)|system prompt|you are now|disregard (the|your) (rules|instructions)|"
-    r"\b(drop|delete|truncate|alter|insert|update)\s+(table|from|into|the)\b|\bdrop\s+\w+\s+table|reveal (your|the) (key|prompt|instructions)|api key|shell command|rm -rf)",
+    r"\b(drop|delete|truncate|alter|insert|update)\s+(table|from|into|the)\b|\bdrop\s+\w+\s+table|reveal (your|the) (key|prompt|instructions)|api key|shell command|rm -rf|"
+    r"\b(drop|delete|truncate|wipe|erase|modify|overwrite|insert)\b.{0,40}\b(rows?|tables?|data|records?|database|sales|products|customers)\b)",
     re.IGNORECASE,
 )
+# Questions that ask for cause and effect. Answers are still computed, but labelled as association only.
+CAUSAL_QUESTION = re.compile(r"\b(caus(e|ed|es|ing)|because of|effect of|impact of|led to|lead to|result(ed)? in)\b|^\s*why did\b|\bdid .{0,60}\b(improve|increase|boost|raise|reduce|hurt)\b",
+                             re.IGNORECASE)
 FOLLOW_UP_CUES = re.compile(r"\b(that|this|those|these|it|there|same|them|its)\b|^\s*(and|what about|how about)\b", re.IGNORECASE)
 METRIC_WORDS = [("quantity", r"\b(units|quantity|volume|demand)\b"), ("orders", r"\b(orders|invoices|transactions)\b"),
                 ("customers", r"\b(customers|buyers)\b(?!.*segment)")]
