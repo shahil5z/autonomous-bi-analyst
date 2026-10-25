@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 
 from pydantic import ValidationError
 
@@ -45,7 +46,25 @@ Strict rules:
 7. The answer must directly answer the question: name the specific leading item (region, product, segment, date or model)
    exactly as written in evidence.headline, and give its headline number. Copy product names character for character.
    Never answer with a vague sentence such as 'the products are listed below'.
-8. For forecasts, never call the forecast 'reliable' or 'accurate'; report the error metrics as they are."""
+8. For forecasts, never call the forecast 'reliable' or 'accurate'; report the error metrics as they are.
+9. Never use em dashes. Use commas, colons, periods or parentheses instead."""
+
+_EM_DASH = re.compile("\\s*\u2014\\s*")
+
+
+def strip_em_dashes(text: str) -> str:
+    """Replace any em dash the model still produced with a comma, so none reach the UI."""
+    return _EM_DASH.sub(", ", text)
+
+
+def sanitize_explanation(exp: Explanation) -> Explanation:
+    return Explanation(
+        answer=strip_em_dashes(exp.answer),
+        evidence_bullets=[strip_em_dashes(x) for x in exp.evidence_bullets],
+        analysis=strip_em_dashes(exp.analysis),
+        limitations=[strip_em_dashes(x) for x in exp.limitations],
+        follow_ups=[strip_em_dashes(x) for x in exp.follow_ups],
+    )
 
 
 def _client():
@@ -96,7 +115,7 @@ def explain(ev: Evidence) -> tuple[Explanation | None, str | None]:
         parsed = resp.choices[0].message.parsed
         if parsed is None:
             return None, "OpenAI returned no parsable explanation"
-        return Explanation.model_validate(parsed.model_dump()), None
+        return sanitize_explanation(Explanation.model_validate(parsed.model_dump())), None
     except ValidationError:
         return None, "OpenAI explanation failed validation"
     except Exception as exc:  # noqa: BLE001

@@ -85,3 +85,13 @@ def test_compact_evidence_is_small(fixture_db):
     r = pipeline.analyze(AnalyzeRequest(question="What is the largest sales anomaly?", session_id="a", use_openai=False), save=False)
     payload = openai_service.compact_evidence(r.evidence)
     assert len(payload["supporting_rows"]) <= 12 and "series" not in payload["stats"]
+
+
+def test_em_dashes_are_stripped_from_explanations():
+    from app.agent.schemas import Explanation
+    from app.ai.openai_service import sanitize_explanation
+
+    exp = Explanation(answer="UK led \u2014 by far", evidence_bullets=["a\u2014b"], analysis="x", limitations=[], follow_ups=[])
+    out = sanitize_explanation(exp)
+    assert out.answer == "UK led, by far"
+    assert "\u2014" not in out.model_dump_json()
