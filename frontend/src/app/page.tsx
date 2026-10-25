@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import ResultCard from "@/components/ResultCard";
 import TracePanel from "@/components/TracePanel";
-import Footer from "@/components/Footer";
 import { analyze, ApiError, getHealth, getRun, getSuggestions } from "@/lib/api";
 import type { AnalyzeResponse, Health, RunSummary, SavedAnalysis } from "@/lib/types";
 
@@ -143,14 +142,14 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-2.5">
+      <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-2.5 lg:h-14 lg:py-0">
         <div className="flex items-center gap-3">
           <button className="lg:hidden text-sm border border-gray-300 rounded px-2 py-1" onClick={() => setMenuOpen(true)} aria-label="Open menu">Menu</button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/abi-icon-128.webp" alt="" width={32} height={32} className="h-8 w-8 rounded-md shrink-0" />
           <div>
             <h1 className="text-sm font-semibold text-gray-900">ABI Analyst</h1>
-            <p className="text-[11px] text-gray-500 hidden sm:block">Ask questions about two years of online-retail sales (Dec 2009 – Dec 2011)</p>
+            <p className="text-[11px] text-gray-500 hidden sm:block">AI analytical workspace: SQL, statistics and ML tools answer business questions with evidence</p>
           </div>
         </div>
         <div className="flex items-center gap-3 text-xs">
@@ -181,7 +180,7 @@ export default function Home() {
               <section aria-label="Getting started" className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">What would you like to know?</h2>
                 <p className="mt-1 text-sm text-gray-600">
-                  Questions are turned into a validated analysis plan. SQL and Python compute every number; the language model only explains
+                  Ask a business question about two years of online-retail sales (Dec 2009 to Dec 2011). It is turned into a validated analysis plan. SQL and Python compute every number; the language model only explains
                   the results, and its wording is checked against them.
                 </p>
                 <div className="mt-4 grid sm:grid-cols-2 gap-2">
@@ -230,7 +229,6 @@ export default function Home() {
 
         {showTrace && <TracePanel result={latest} loading={loading} onClose={() => setShowTrace(false)} />}
       </div>
-      <Footer />
     </div>
   );
 }

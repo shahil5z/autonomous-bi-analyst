@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Footer from "@/components/Footer";
 
 export const metadata = { title: "Methodology · ABI Analyst" };
 
@@ -129,8 +128,11 @@ export default function Methodology() {
             <div className="text-sm text-gray-700 leading-relaxed space-y-2">{s.body}</div>
           </section>
         ))}
+        <p className="mt-10 border-t border-gray-200 pt-3 text-[11px] leading-relaxed text-gray-500">
+          Built as an AI + Data Science portfolio project by Shahil.<br />
+          Data: UCI Online Retail II (CC BY 4.0); campaigns are synthetic.
+        </p>
       </div>
-      <Footer />
     </div>
   );
 }

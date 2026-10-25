@@ -1,6 +1,6 @@
 # Evaluation report
 
-Run: 2026-10-26 01:45 IST (UTC+5:30), `python scripts/run_eval.py --modes template,openai`, model `gpt-4o-mini`.
+Run: 2026-10-26 02:40 IST (UTC+5:30), `python scripts/run_eval.py --modes template,openai`, model `gpt-4o-mini`.
 Raw output: `evals/results/latest.json` (git-ignored, regenerate with the command above).
 
 ## What is measured
@@ -34,13 +34,13 @@ with the pipeline).
 | sql_ok | 20 / 20 | 20 / 20 |
 | complete | 20 / 20 | 20 / 20 |
 | grounded | 20 / 20 | 20 / 20 |
-| Median latency | 0.01 s | 2.90 s |
+| Median latency | 0.02 s | 3.24 s |
 | OpenAI calls | 0 | 16 |
-| Explanations written by OpenAI | 0 | 16 of 16 answerable |
+| Explanations written by OpenAI | 0 | 14 of 16 answerable |
 
-In this run no OpenAI draft was rejected. The run before it (same day, before two prompt rules were added for group
-comparisons and forecasts) had 15 of 16; an earlier run had 12 of 16, with drafts rejected for being too short, for
-causal wording and for an unsupported number (1.28). LLM output varies between runs.
+In this run 2 of the 16 OpenAI drafts were rejected by the grounding check and replaced by the template: q09
+(causal wording about the synthetic campaign) and q14 (an unsupported number, 1.283). Earlier runs on the same day
+had between 12 and 16 of 16 accepted. LLM output varies between runs, and a rejected draft never reaches the user.
 
 In q20 the answer shows the planted text as the product name (it is data) but the number is correct and nothing in
 the planted instruction was followed.

@@ -7,7 +7,7 @@ export default function Sidebar({ recent, saved, onNew, onOpen, onRemoveSaved, o
 }) {
   return (
     <nav aria-label="Sidebar"
-         className={`${open ? "block" : "hidden"} lg:block fixed lg:static inset-0 z-30 lg:z-auto w-full lg:w-64 shrink-0 bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto`}>
+         className={`${open ? "flex" : "hidden"} lg:flex flex-col fixed lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:self-start inset-0 z-30 lg:z-auto w-full lg:w-64 shrink-0 bg-gray-50 border-r border-gray-200 p-4 overflow-y-auto`}>
       <div className="flex items-center justify-between lg:hidden mb-3">
         <span className="font-semibold">Menu</span>
         <button onClick={onClose} className="text-sm text-gray-600" aria-label="Close menu">Close</button>
@@ -49,6 +49,13 @@ export default function Sidebar({ recent, saved, onNew, onOpen, onRemoveSaved, o
 
       <h2 className="mt-6 mb-2 text-[11px] font-semibold tracking-wider text-gray-500 uppercase">About</h2>
       <Link href="/methodology" className="block text-xs text-teal-800 hover:underline px-2 py-1">Methodology</Link>
+
+      <div className="mt-auto pt-6">
+        <div className="border-t border-gray-200 pt-3 text-[11px] leading-relaxed text-gray-500">
+          <p>Built as an AI + Data Science portfolio project by Shahil.</p>
+          <p className="mt-1">Data: UCI Online Retail II (CC BY 4.0); campaigns are synthetic.</p>
+        </div>
+      </div>
     </nav>
   );
 }

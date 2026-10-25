@@ -2,7 +2,7 @@ import type { AnalyzeResponse } from "@/lib/types";
 
 export default function TracePanel({ result, loading, onClose }: { result: AnalyzeResponse | null; loading: boolean; onClose: () => void }) {
   return (
-    <aside aria-label="Analysis trace" className="w-full lg:w-72 shrink-0 border-t lg:border-t-0 lg:border-l border-gray-200 bg-white p-4 text-sm">
+    <aside aria-label="Analysis trace" className="w-full lg:w-72 shrink-0 lg:sticky lg:top-14 lg:self-start lg:h-[calc(100vh-3.5rem)] lg:overflow-y-auto border-t lg:border-t-0 lg:border-l border-gray-200 bg-white p-4 text-sm">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-semibold text-gray-900">Analysis Trace</h2>
         <button onClick={onClose} className="text-xs text-gray-500 hover:text-gray-900" aria-label="Hide analysis trace">Hide</button>
