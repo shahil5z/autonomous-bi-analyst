@@ -14,7 +14,7 @@
 ![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?logo=openai&logoColor=white)
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?logo=scikitlearn&logoColor=white)
 
-**Live Demo:** [https://autonomous-bi-analyst.vercel.app/](https://autonomous-bi-analyst.vercel.app/)
+[Live demo](https://autonomous-bi-analyst.vercel.app/)
 
 </div>
 
